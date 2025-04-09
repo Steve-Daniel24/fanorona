@@ -1,0 +1,28 @@
+5.  Fonctionnalités à implémenter
+Gestion des clics souris pour sélectionner/déplacer les pions
+Validation des mouvements selon les règles
+Détection des alignements de 3 pions
+Système de capture des pions adverses
+Affichage du tour actuel
+Affichage du gagnant
+Menu de démarrage
+
+Options de jeu (taille plateau, joueurs, etc.)
+
+6. Internationalisation en malgache
+Traduire l'interface en malgache
+Adapter les messages du jeu
+Ajouter un système de langue configurable
+
+7. Tests et améliorations
+Tester toutes les règles du jeu
+Optimiser les performances
+Ajouter des animations
+Implémenter un système de sauvegarde
+
+8. Documentation
+Documenter le code
+Créer un manuel d'utilisation en malgache/français
+Alternatives pour l'interface graphique
+Si vous voulez une interface plus avancée que tkinter, vous pouvez utiliser:
+ 
