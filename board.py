@@ -1,6 +1,8 @@
 import pygame
 from pieces import Piece
 
+from utils import utils
+
 class Board:
     
     def __init__(self, screen, SCREEN_WIDTH, SCREEN_HEIGHT):
@@ -24,6 +26,8 @@ class Board:
         
         # Constantes pour les pions
         self.piece_radius = self.border_size // 24
+        
+        print("radius piece : " + str(self.piece_radius))
         self.pieces = []
         
         self.initialize_pieces()
@@ -79,21 +83,24 @@ class Board:
         
         for piece in self.pieces:
             piece.draw(self.screen, self.BROWN)
-                
+    
     def initialize_pieces(self):
         piece_positions = [
             (0, 0, self.BLACK, 'player1'),
-            (0.5, 0, self.BLACK, 'player1'), 
+            (0.5, 0, self.WHITE, 'player2'), 
             (1, 0, self.BLACK, 'player1'),
             
             (0, 1, self.WHITE, 'player2'),
-            (0.5, 1, self.WHITE, 'player2'),
+            (0.5, 1, self.BLACK, 'player1'),
             (1, 1, self.WHITE, 'player2')
         ]
         
-        for x_rel, y_rel, color, owner in piece_positions:
-            x = self.border_x + int(x_rel * self.border_size)
-            y = self.border_y + int(y_rel * self.border_size)
+        for x_rel, y_rel, color, owner in piece_positions:             
+            x, y = utils.relative_to_absolute(x_rel, y_rel, self.border_x, self.border_y, self.border_size)
+            
+            print("self.border_size : " + str(self.border_size))
+            print("x : " + str(x))
+            print("y : " + str(y))
             
             piece = Piece(x, y, self.piece_radius, color, owner)
             self.pieces.append(piece)
