@@ -16,12 +16,15 @@ while running:
         if event.type == pygame.QUIT:
             running = False 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Clic gauche
+            if event.button == 1: 
                 game.handle_click(event.pos)
+        if game.current_player == 'player2' and not game.game_over:
+            game.tour_ia()
     
     screen.fill((240, 217, 181)) 
     game.draw()
     pygame.display.flip()
     clock.tick(60)
-
+    
+    
 pygame.quit()

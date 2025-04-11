@@ -1,18 +1,31 @@
 import pygame
+import time
 from board import Board
 from pieces import Piece
 from utils import utils
+
+from hell import devil
 
 class GameManager:
     def __init__(self, screen, width, height):
         self.screen = screen
         self.board = Board(screen, width, height)
         self.selected_piece = None
-        self.current_player = 'player2'
+        self.current_player = 'player1'
         
         self.game_over = False
         self.winner = None
+         
+        self.ai = devil(self, self.board, player_color='player2')  
     
+    def tour_ia(self):
+        coup = self.ai.choisir_coup()
+        
+        if coup:
+            piece, (x, y) = coup
+            piece.move(x, y)
+            self._switch_player()
+                        
     def handle_click(self, pos):
         """Gère les clics de souris"""
         if not self.selected_piece:
@@ -23,7 +36,6 @@ class GameManager:
                     piece.selected = True
                     break
         else:
-            # Phase de déplacement
             self._try_move_piece(pos)
     
     def _try_move_piece(self, pos):
@@ -71,10 +83,15 @@ class GameManager:
     
     def _is_valid_move(self, piece, target_pos):
         """Vérifie si le mouvement est valide"""
+        # Pas en dehors de la table
+        if not (self.board.border_x <= target_pos[0] <= self.board.border_x + self.board.border_size and
+        self.board.border_y <= target_pos[1] <= self.board.border_y + self.board.border_size):
+            return False
+
         # 1. Vérifie que la case cible est vide
         for p in self.board.pieces:
             if p.x == target_pos[0] and p.y == target_pos[1]:
-                print("Case non vide")
+                # print("Case non vide")
                 return False
         
         step = self.board.border_size // 2
@@ -85,7 +102,7 @@ class GameManager:
         if not ((dx == step and dy == 0) or  # Horizontal
                 (dy == step and dx == 0) or  # Vertical
                 (dx == step and dy == step)):  # Diagonal
-            print("Mouvement interdite")
+            # print("Mouvement interdite")
             return False
         
         # 3. Vérifie les diagonales interdites (en coordonnées relatives)
@@ -101,10 +118,10 @@ class GameManager:
         
         if piece_rel in forbidden_diagonals:
             if target_rel in forbidden_diagonals[piece_rel]:
-                print("piece_rel" + str(piece_rel))
-                print("target_rel : " + str(target_rel))
+                # print("piece_rel" + str(piece_rel))
+                # print("target_rel : " + str(target_rel))
                 
-                print("Diagonale interdite")
+                # print("")
                 return False
         
         # 4. Vérifie les pièces intermédiaires (pour horizontaux/verticaux)
@@ -129,7 +146,7 @@ class GameManager:
     def draw(self):
         """Dessine le plateau et les pions"""
         self.board.draw_board()
-        
+    
     def _check_win_condition(self):
         """Vérifie si le joueur actuel a gagné""" 
         player_pieces = [p for p in self.board.pieces if p.owner == self.current_player]
@@ -138,7 +155,7 @@ class GameManager:
             for j in range(i+1, len(player_pieces)):
                 for k in range(j+1, len(player_pieces)):
                     if self._are_aligned(player_pieces[i], player_pieces[j], player_pieces[k]):
-                        self.game_over = True
+                        self.game_over = True 
                         self.winner = self.current_player
                         return True
         return False
@@ -152,7 +169,7 @@ class GameManager:
         # Vertical
         if p1.x == p2.x == p3.x:
             return True
-            
+        
         # Alignement diagonal (même pente)
         # On évite la division par zéro en utilisant la multiplication
         dx1 = p2.x - p1.x

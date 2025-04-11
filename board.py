@@ -27,7 +27,7 @@ class Board:
         # Constantes pour les pions
         self.piece_radius = self.border_size // 24
         
-        print("radius piece : " + str(self.piece_radius))
+        # print("radius piece : " + str(self.piece_radius))
         self.pieces = []
         
         self.initialize_pieces()
@@ -87,20 +87,20 @@ class Board:
     def initialize_pieces(self):
         piece_positions = [
             (0, 0, self.BLACK, 'player1'),
-            (0.5, 0, self.WHITE, 'player2'), 
-            (1, 0, self.BLACK, 'player1'),
+            (0.5, 0, self.BLACK, 'player1'), 
+            (1, 0.5, self.BLACK, 'player1'),
             
             (0, 1, self.WHITE, 'player2'),
-            (0.5, 1, self.BLACK, 'player1'),
+            (0.5, 0.5, self.WHITE, 'player2'),
             (1, 1, self.WHITE, 'player2')
         ]
         
         for x_rel, y_rel, color, owner in piece_positions:             
             x, y = utils.relative_to_absolute(x_rel, y_rel, self.border_x, self.border_y, self.border_size)
             
-            print("self.border_size : " + str(self.border_size))
-            print("x : " + str(x))
-            print("y : " + str(y))
+            # print("self.border_size : " + str(self.border_size))
+            # print("x : " + str(x))
+            # print("y : " + str(y))
             
             piece = Piece(x, y, self.piece_radius, color, owner)
             self.pieces.append(piece)
