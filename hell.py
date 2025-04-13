@@ -3,6 +3,7 @@ import copy
 
 from board import Board
 from pieces import Piece
+from utils import utils
 
 class devil:
     def __init__(self, GameManager, board, player_color):
@@ -203,9 +204,93 @@ class devil:
                     return False
             
             return True
-        
+    
     def _absolute_to_relative(self, x, y):
         """Convertit des coordonnées absolues en relatives (0-1)"""
         x_rel = round((x - self.board.border_x) / self.board.border_size, 2)
         y_rel = round((y - self.board.border_y) / self.board.border_size, 2)
         return (x_rel, y_rel)
+    
+    def choisir_placement(self):
+        """Choisit la meilleure position pour placer une pièce"""
+        positions_possibles = [
+            (0, 0), (0.5, 0), (1, 0),
+            (0, 0.5), (0.5, 0.5), (1, 0.5),
+            (0, 1), (0.5, 1), (1, 1)
+        ]
+        
+        meilleur_score = -float('inf')
+        meilleure_position = None
+        
+        for pos_rel in positions_possibles:
+            x, y = utils.relative_to_absolute(pos_rel[0], pos_rel[1],
+                                            self.board.border_x,
+                                            self.board.border_y,
+                                            self.board.border_size)
+            
+            # Vérifier si la position est libre
+            if any(p.x == x and p.y == y for p in self.board.pieces):
+                continue
+            
+            # Évaluer la position
+            score = self._evaluer_position(pos_rel)
+            
+            if score > meilleur_score:
+                meilleur_score = score
+                meilleure_position = (x, y)
+        
+        return meilleure_position
+    
+    def _evaluer_position(self, pos_rel):
+        """Évalue l'avantage d'une position (en coordonnées relatives)"""
+        score = 0
+        
+        # Priorité au centre
+        if pos_rel == (0.5, 0.5):
+            score += 3
+            
+        # Positions sur les bords (moins avantageuses)
+        if pos_rel in [(0, 0), (0, 1), (1, 0), (1, 1)]:
+            score += 1
+            
+        # Positions intermédiaires
+        if pos_rel in [(0.5, 0), (0, 0.5), (0.5, 1), (1, 0.5)]:
+            score += 2
+        
+        # Vérifier si cette position complète un alignement adverse
+        adversaire = 'player1' if self.player_name == 'player2' else 'player2'
+        pieces_adverses = [p for p in self.board.pieces if p.owner == adversaire]
+        
+        # Pour chaque paire de pièces adverses, vérifier si notre position complète l'alignement
+        for i in range(len(pieces_adverses)):
+            for j in range(i+1, len(pieces_adverses)):
+                p1 = pieces_adverses[i]
+                p2 = pieces_adverses[j]
+                
+                # Convertir en relatif pour faciliter les calculs
+                p1_rel = self._absolute_to_relative(p1.x, p1.y)
+                p2_rel = self._absolute_to_relative(p2.x, p2.y)
+                
+                # Vérifier alignement potentiel
+                if self._sont_alignes(p1_rel, p2_rel, pos_rel):
+                    score += 5  # Bonus important pour bloquer l'adversaire
+        
+        return score
+    
+    def _sont_alignes(self, p1, p2, p3):
+        """Vérifie si 3 positions relatives sont alignées"""
+        # Horizontal
+        if p1[1] == p2[1] == p3[1]:
+            return True
+        
+        # Vertical
+        if p1[0] == p2[0] == p3[0]:
+            return True
+        
+        # Diagonal
+        dx1 = p2[0] - p1[0]
+        dy1 = p2[1] - p1[1]
+        dx2 = p3[0] - p1[0]
+        dy2 = p3[1] - p1[1]
+        
+        return dx1 * dy2 == dx2 * dy1

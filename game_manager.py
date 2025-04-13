@@ -22,21 +22,11 @@ class GameManager:
         self.initialization_phase = True
         self.pieces_placed = {'player1': 0, 'player2': 0}  
         self.total_pieces_to_place = 3 
-        
-    def tour_ia(self):
-        coup = self.ai.choisir_coup()
-        
-        if coup:
-            piece, (x, y) = coup
-            piece.move(x, y)
-            self._check_win_condition("player2")
-            self._switch_player()
     
     def handle_click(self, pos):
         """Gère les clics de souris"""
         if self.initialization_phase:
-            if self.current_player == 'player1':
-                self._handle_initialization_click(pos)
+            self._handle_initialization_click(pos)
         else:
             # Le code existant pour le jeu normal
             if not self.selected_piece:
@@ -48,6 +38,15 @@ class GameManager:
             else:
                 self._try_move_piece(pos)
     
+    def tour_ia(self):
+        coup = self.ai.choisir_coup()
+        
+        if coup:
+            piece, (x, y) = coup
+            piece.move(x, y)
+            self._check_win_condition("player2")
+            self._switch_player()
+            
     def _handle_initialization_click(self, pos):
         """Gère le placement pendant l'initialisation"""
         target_pos = self._get_nearest_valid_position(pos)
@@ -62,7 +61,8 @@ class GameManager:
             
             # Passe à l'IA pour qu'elle place sa pièce
             self.current_player = 'player2'
-            self._place_ia_piece()
+            placement = self.ai.choisir_placement()
+            self._place_piece(placement, 'player2')
             self.pieces_placed['player2'] += 1
             
             # Vérifie à nouveau si l'initialisation est terminée
@@ -79,33 +79,12 @@ class GameManager:
         piece = Piece(pos[0], pos[1], self.board.piece_radius, color, owner)
         self.board.pieces.append(piece)
     
-    def _place_ia_piece(self):
-        """L'IA place une pièce (version améliorable)"""
-        valid_positions = self.board.get_valid_positions()
-        empty_positions = [
-            pos for pos in valid_positions 
-            if not any(p.x == pos[0] and p.y == pos[1] for p in self.board.pieces)
-        ]
-        
-        if empty_positions:
-            # Stratégie simple : choisir au centre si disponible
-            center = (self.board.border_x + self.board.border_size//2, 
-                     self.board.border_y + self.board.border_size//2)
-            
-            if center in empty_positions:
-                chosen_pos = center
-            else:
-                import random
-                chosen_pos = random.choice(empty_positions)
-            
-            self._place_piece(chosen_pos, 'player2')
-    
     def _check_initialization_complete(self):
         """Vérifie si tous les pions sont placés"""
         if (self.pieces_placed['player1'] >= self.total_pieces_to_place and
             self.pieces_placed['player2'] >= self.total_pieces_to_place):
             self.initialization_phase = False
-            self.current_player = 'player1'  # Le joueur humain commence
+            self.current_player == "player1"
             return True
         return False
     
