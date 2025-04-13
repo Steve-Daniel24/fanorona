@@ -2,6 +2,7 @@ import pygame
 
 class Piece:
     def __init__(self, x, y, radius, color, owner):
+        
         self.x = x
         self.y = y
         self.radius = radius

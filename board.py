@@ -30,7 +30,8 @@ class Board:
         # print("radius piece : " + str(self.piece_radius))
         self.pieces = []
         
-        self.initialize_pieces()
+        
+        # self.initialize_pieces()
     
     def draw_board(self): 
         self.screen.fill(self.BACKGROUND)
@@ -84,15 +85,15 @@ class Board:
         for piece in self.pieces:
             piece.draw(self.screen, self.BROWN)
     
-    def initialize_pieces(self):
+    def  initialize_pieces(self):
         piece_positions = [
             (0, 0, self.BLACK, 'player1'),
-            (0.5, 0, self.BLACK, 'player1'), 
-            (1, 0.5, self.BLACK, 'player1'),
+            (0.5, 1, self.BLACK, 'player1'), 
+            (1, 0, self.BLACK, 'player1'),
             
-            (0, 1, self.WHITE, 'player2'),
-            (0.5, 0.5, self.WHITE, 'player2'),
-            (1, 1, self.WHITE, 'player2')
+            (0, 0.5, self.WHITE, 'player2'),
+            (0.5, 0, self.WHITE, 'player2'),
+            (1, 0.5, self.WHITE, 'player2')
         ]
         
         for x_rel, y_rel, color, owner in piece_positions:             

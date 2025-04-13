@@ -16,20 +16,21 @@ class devil:
         meilleur_score = -float('inf')
         
         for piece in [p for p in self.board.pieces if p.owner == self.player_name]:
+            print("piece : " + str(piece.x) + " " + str(piece.y))
+            print("Coups valide : ")
             for coup in self._coups_possibles(piece):
                 # Évalue seulement les coups valides
                 if self.GameManager._is_valid_move(piece, coup):
-                    print("Coups valide : ")
-                    print("piece : " + str(piece.x) + " " + str(piece.y))
                     print("target : " + str(coup[0]) + " " + str(coup[1]))
-                    print()
                     
                     nouveau_plateau = self._simuler_coup(piece, coup)
-                    score = self._minimax(nouveau_plateau, profondeur=6, est_maximisant=True)
+                    score = self._minimax(nouveau_plateau, profondeur=5, est_maximisant=False)
                     
                     if score > meilleur_score:
                         meilleur_score = score
                         meilleur_coup = (piece, coup)
+            
+            print()
         
         return meilleur_coup
     
@@ -49,7 +50,7 @@ class devil:
         for dx, dy in directions:                        
             result.append((piece.x  + dx, piece.y + dy)) 
         
-        return result 
+        return result
     
     def _simuler_coup(self, piece, coup):
         """Crée une copie légère du plateau"""
@@ -64,21 +65,33 @@ class devil:
                 p.move(coup[0], coup[1])
                 break
         
+        print("palteau de simulation")
+        return nouveau_plateau
+    
+    def _simuler_coup_with_board(self, piece, coup, plateau):
+        """Crée une VRAIE copie du plateau"""
+        nouveau_plateau = Board(None, plateau.SCREEN_WIDTH, plateau.SCREEN_HEIGHT)
+        nouveau_plateau.pieces = [
+            Piece(p.x, p.y, p.radius, p.color, p.owner)
+            for p in plateau.pieces
+        ]
+        
+        for p in nouveau_plateau.pieces:
+            if p.x == piece.x and p.y == piece.y:
+                p.move(coup[0], coup[1])
+                break
+        
         return nouveau_plateau
     
     def _evaluer_plateau(self, plateau):
         """Évalue l'avantage de l'IA"""
-        score = 0
-        pions_ia = len([p for p in plateau.pieces if p.owner == self.player_name])
-        pions_adversaire = len(plateau.pieces) - pions_ia
-        score += (pions_ia - pions_adversaire) * 10
-        
-        # Bonus pour les alignements
+        score = 0 
+         
         if self._a_trois_alignes(plateau, self.player_name):
-            score += 100
+            score += 100   
         if self._a_trois_alignes(plateau, 'player1' if self.player_name == 'player2' else 'player2'):
-            score -= 100
-            
+            score -= 100 
+        
         return score
     
     def _a_trois_alignes(self, plateau, joueur):
@@ -97,10 +110,15 @@ class devil:
                     
                     # Alignement horizontal (même y)
                     if p1.y == p2.y == p3.y:
+                        # print("horizontal")
+                        # print( joueur + " : " + str(p1.x) + " " + str(p1.y) + " " + str(p2.x) + " " + str(p2.y) + " " + str(p3.x) + " " + str(p3.y))
+                        
                         return True
                     
                     # Alignement vertical (même x)
                     if p1.x == p2.x == p3.x:
+                        # print("vertical")
+                        # print(joueur + " : " + str(p1.x) + " " + str(p1.y) + " " + str(p2.x) + " " + str(p2.y) + " " + str(p3.x) + " " + str(p3.y))
                         return True
                     
                     # Alignement diagonal (même pente)
@@ -110,13 +128,14 @@ class devil:
                     dy2 = p3.y - p1.y
                     
                     if dx1 * dy2 == dx2 * dy1:  # Évite la division par zéro
+                        # print("oblique")
+                        # print(joueur + " : " + str(p1.x) + " " + str(p1.y) + " " + str(p2.x) + " " + str(p2.y) + " " + str(p3.x) + " " + str(p3.y))
                         return True
         
         return False
     
     def _minimax(self, plateau, profondeur, est_maximisant):
-        """Algorithme MinMax"""
-        if profondeur == 0:
+        if profondeur == 0 or self._a_trois_alignes(plateau, 'player1') or self._a_trois_alignes(plateau, 'player2'):
             return self._evaluer_plateau(plateau)
         
         if est_maximisant:
@@ -124,7 +143,7 @@ class devil:
             for piece in [p for p in plateau.pieces if p.owner == self.player_name]:
                 for coup in self._coups_possibles(piece):
                     if self._est_coup_valide(piece, coup, plateau):
-                        new_board = self._simuler_coup(piece, coup)
+                        new_board = self._simuler_coup_with_board(piece, coup, plateau)
                         best = max(best, self._minimax(new_board, profondeur-1, False))
             return best
         else:
@@ -133,7 +152,7 @@ class devil:
             for piece in [p for p in plateau.pieces if p.owner == adversaire]:
                 for coup in self._coups_possibles(piece):
                     if self._est_coup_valide(piece, coup, plateau):
-                        new_board = self._simuler_coup(piece, coup)
+                        new_board = self._simuler_coup_with_board(piece, coup, plateau)
                         best = min(best, self._minimax(new_board, profondeur-1, True))
             return best
     
@@ -143,7 +162,7 @@ class devil:
             if not (board.border_x <= target_pos[0] <= board.border_x + board.border_size and
             board.border_y <= target_pos[1] <= board.border_y + board.border_size):
                 return False
-
+            
             # 1. Vérifie que la case cible est vide
             for p in board.pieces:
                 if p.x == target_pos[0] and p.y == target_pos[1]:
