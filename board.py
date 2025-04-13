@@ -29,6 +29,7 @@ class Board:
         
         # print("radius piece : " + str(self.piece_radius))
         self.pieces = []
+        self.forbidden_positions = [] 
         
         # self.initialize_pieces()
     
@@ -84,6 +85,14 @@ class Board:
         for piece in self.pieces:
             piece.draw(self.screen, self.BROWN)
     
+        for pos in self.forbidden_positions:
+            pygame.draw.circle(
+                self.screen, 
+                (0, 0, 0),  # Noir pur
+                pos,
+                self.piece_radius // 2  # Plus petit qu'une pièce normale
+            )
+            
     def  initialize_pieces(self):
         piece_positions = [
             (0, 0, self.BLACK, 'player1'),
@@ -126,3 +135,12 @@ class Board:
     def _is_valid_initial_position(self, pos):
         """Vérifie si la position est vide"""
         return not any(p.x == pos[0] and p.y == pos[1] for p in self.pieces)
+    
+    def add_forbidden_position(self, pos):
+        """Ajoute une position interdite"""
+        if pos not in self.forbidden_positions:
+            self.forbidden_positions.append(pos)
+    
+    def is_position_forbidden(self, pos):
+        """Vérifie si une position est interdite"""
+        return pos in self.forbidden_positions

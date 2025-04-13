@@ -22,10 +22,23 @@ class GameManager:
         self.initialization_phase = True
         self.pieces_placed = {'player1': 0, 'player2': 0}  
         self.total_pieces_to_place = 3 
+        
+        self.adding_forbidden = False 
+    
+    def toggle_forbidden_mode(self):
+        """Active/désactive le mode ajout de points noirs"""
+        self.adding_forbidden = not self.adding_forbidden
     
     def handle_click(self, pos):
         """Gère les clics de souris"""
-        if self.initialization_phase:
+        # ajout de point noir
+        if self.adding_forbidden:
+            target_pos = self._get_nearest_valid_position(pos)
+            if target_pos:
+                self.board.add_forbidden_position(target_pos)
+            return
+        # initialisation des pieces
+        elif self.initialization_phase:
             self._handle_initialization_click(pos)
         else:
             # Le code existant pour le jeu normal
@@ -49,26 +62,28 @@ class GameManager:
     
     def _handle_initialization_click(self, pos):
         """Gère le placement pendant l'initialisation"""
+        if self.adding_forbidden:  # Ne pas placer de pièces en mode point noir
+            return
+                    
         target_pos = self._get_nearest_valid_position(pos)
         if target_pos and self.board._is_valid_initial_position(target_pos):
-            # Place la pièce du joueur
-            self.board._place_piece(target_pos, 'player1')
-            self.pieces_placed['player1'] += 1
-            
-            # Vérifie si l'initialisation est terminée
-            if self._check_initialization_complete():
-                return
-            
-            # Passe à l'IA pour qu'elle place sa pièce
-            self.current_player = 'player2'
-            placement = self.ai_player_one.choisir_placement()
-            self.board._place_piece(placement, 'player2')
-            self.pieces_placed['player2'] += 1
-            
-            # Vérifie à nouveau si l'initialisation est terminée
-            if self._check_initialization_complete() :
-                print("vita")
-                return
+            # Vérifie aussi que la position n'est pas interdite
+            if not self.board.is_position_forbidden(target_pos):
+                self.board._place_piece(target_pos, 'player1')
+                self.pieces_placed['player1'] += 1
+                
+                if self._check_initialization_complete():
+                    return
+                
+                self.current_player = 'player2'
+                placement = self.ai_player_one.choisir_placement()
+                if placement:  # S'assurer que l'IA a trouvé une position valide
+                    self.board._place_piece(placement, 'player2')
+                    self.pieces_placed['player2'] += 1
+                    
+                    if self._check_initialization_complete():
+                        return
+                    self._switch_player() 
     
     def _check_initialization_complete(self):
         """Vérifie si tous les pions sont placés"""
@@ -124,6 +139,10 @@ class GameManager:
     
     def _is_valid_move(self, piece, target_pos):
         """Vérifie si le mouvement est valide"""
+        # Vérifie si la position est interdite
+        if self.board.is_position_forbidden(target_pos):
+            return False
+
         # Pas en dehors de la table
         if not (self.board.border_x <= target_pos[0] <= self.board.border_x + self.board.border_size and
         self.board.border_y <= target_pos[1] <= self.board.border_y + self.board.border_size):
