@@ -30,7 +30,6 @@ class Board:
         # print("radius piece : " + str(self.piece_radius))
         self.pieces = []
         
-        
         # self.initialize_pieces()
     
     def draw_board(self): 

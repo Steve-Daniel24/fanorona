@@ -46,7 +46,7 @@ class GameManager:
             piece.move(x, y)
             self._check_win_condition("player2")
             self._switch_player()
-            
+    
     def _handle_initialization_click(self, pos):
         """Gère le placement pendant l'initialisation"""
         target_pos = self._get_nearest_valid_position(pos)
