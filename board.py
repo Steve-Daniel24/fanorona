@@ -116,3 +116,13 @@ class Board:
                 
                 positions.append((x, y)) 
         return positions
+    
+    def _place_piece(self, pos, owner):
+        """Place une pièce sur le plateau"""
+        color = self.BLACK if owner == 'player1' else self.WHITE
+        piece = Piece(pos[0], pos[1], self.piece_radius, color, owner)
+        self.pieces.append(piece)
+    
+    def _is_valid_initial_position(self, pos):
+        """Vérifie si la position est vide"""
+        return not any(p.x == pos[0] and p.y == pos[1] for p in self.pieces)

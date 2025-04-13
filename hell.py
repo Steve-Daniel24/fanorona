@@ -158,7 +158,8 @@ class devil:
             return best
     
     def _est_coup_valide(self, piece, target_pos, board):
-            """Vérifie si le mouvement est valide"""
+            """Vérifie si le mouvement est valide""" 
+    
             # Pas en dehors de la table
             if not (board.border_x <= target_pos[0] <= board.border_x + board.border_size and
             board.border_y <= target_pos[1] <= board.border_y + board.border_size):

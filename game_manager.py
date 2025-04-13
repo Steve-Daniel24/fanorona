@@ -17,7 +17,7 @@ class GameManager:
         self.game_over = False
         self.winner = None
          
-        self.ai = devil(self, self.board, player_color='player2')  
+        self.ai_player_one = devil(self, self.board, player_color='player2')
         
         self.initialization_phase = True
         self.pieces_placed = {'player1': 0, 'player2': 0}  
@@ -39,7 +39,7 @@ class GameManager:
                 self._try_move_piece(pos)
     
     def tour_ia(self):
-        coup = self.ai.choisir_coup()
+        coup = self.ai_player_one.choisir_coup()
         
         if coup:
             piece, (x, y) = coup
@@ -50,9 +50,9 @@ class GameManager:
     def _handle_initialization_click(self, pos):
         """Gère le placement pendant l'initialisation"""
         target_pos = self._get_nearest_valid_position(pos)
-        if target_pos and self._is_valid_initial_position(target_pos):
+        if target_pos and self.board._is_valid_initial_position(target_pos):
             # Place la pièce du joueur
-            self._place_piece(target_pos, 'player1')
+            self.board._place_piece(target_pos, 'player1')
             self.pieces_placed['player1'] += 1
             
             # Vérifie si l'initialisation est terminée
@@ -61,30 +61,21 @@ class GameManager:
             
             # Passe à l'IA pour qu'elle place sa pièce
             self.current_player = 'player2'
-            placement = self.ai.choisir_placement()
-            self._place_piece(placement, 'player2')
+            placement = self.ai_player_one.choisir_placement()
+            self.board._place_piece(placement, 'player2')
             self.pieces_placed['player2'] += 1
             
             # Vérifie à nouveau si l'initialisation est terminée
-            if not self._check_initialization_complete():
-                self._switch_player()
-    
-    def _is_valid_initial_position(self, pos):
-        """Vérifie si la position est vide"""
-        return not any(p.x == pos[0] and p.y == pos[1] for p in self.board.pieces)
-    
-    def _place_piece(self, pos, owner):
-        """Place une pièce sur le plateau"""
-        color = self.board.BLACK if owner == 'player1' else self.board.WHITE
-        piece = Piece(pos[0], pos[1], self.board.piece_radius, color, owner)
-        self.board.pieces.append(piece)
+            if self._check_initialization_complete() :
+                print("vita")
+                return
     
     def _check_initialization_complete(self):
         """Vérifie si tous les pions sont placés"""
         if (self.pieces_placed['player1'] >= self.total_pieces_to_place and
             self.pieces_placed['player2'] >= self.total_pieces_to_place):
             self.initialization_phase = False
-            self.current_player == "player1"
+            self._switch_player()
             return True
         return False
     

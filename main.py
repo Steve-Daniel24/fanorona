@@ -26,7 +26,7 @@ while running:
             if event.button == 1:  # Clic gauche
                 game.handle_click(event.pos)
                 last_move_time = current_time  # Mettre à jour le temps du dernier coup
-    
+        
     # Faire jouer l'IA si c'est son tour et que le délai est écoulé
     if (not game.initialization_phase and game.current_player == 'player2' and not game.game_over 
         and current_time - last_move_time >= ia_move_delay):
