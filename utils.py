@@ -29,7 +29,7 @@ class utils:
         return False
     
     @staticmethod
-    def _are_aligned(self, p1, p2, p3):
+    def _are_aligned(p1, p2, p3):
         """Vérifie si 3 pions sont alignés""" 
         # Horizontal
         if p1.y == p2.y == p3.y:

@@ -11,9 +11,8 @@ pygame.display.set_caption("Fanorona Telo")
 game = GameManager(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
 clock = pygame.time.Clock()
 
-# Variable pour suivre le temps du dernier coup
 last_move_time = 0
-ia_move_delay = 1  # Délai en secondes
+ia_move_delay = 1
 
 running = True
 while running:
@@ -23,18 +22,18 @@ while running:
         if event.type == pygame.QUIT:
             running = False 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Clic gauche
+            if event.button == 1: 
                 game.handle_click(event.pos)
-                last_move_time = current_time  # Mettre à jour le temps du dernier coup
+                last_move_time = current_time 
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_f:  # Appuyer sur F pour activer/désactiver
+            if event.key == pygame.K_f: 
                 game.toggle_forbidden_mode()
     
     # Faire jouer l'IA si c'est son tour et que le délai est écoulé
     if (not game.initialization_phase and game.current_player == 'player2' and not game.game_over 
         and current_time - last_move_time >= ia_move_delay):
         game.tour_ia()
-        last_move_time = current_time  # Réinitialiser le timer
+        last_move_time = current_time
     
     screen.fill((240, 217, 181)) 
     game.draw()

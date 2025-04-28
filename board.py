@@ -113,7 +113,7 @@ class Board:
             
             piece = Piece(x, y, self.piece_radius, color, owner)
             self.pieces.append(piece)
-    
+        
     def get_valid_positions(self):
         """Retourne toutes les positions valides sur le plateau"""
         positions = []
@@ -144,3 +144,52 @@ class Board:
     def is_position_forbidden(self, pos):
         """Vérifie si une position est interdite"""
         return pos in self.forbidden_positions
+    
+    def _est_coup_valide(self, piece, target_pos, board):
+        """Vérifie si le mouvement est valide""" 
+
+        # Pas en dehors de la table
+        if not (board.border_x <= target_pos[0] <= board.border_x + board.border_size and
+        board.border_y <= target_pos[1] <= board.border_y + board.border_size):
+            return False
+            
+        # 1. Vérifie que la case cible est vide
+        for p in board.pieces:
+            if p.x == target_pos[0] and p.y == target_pos[1]:
+                # print("Case non vide")
+                return False
+            
+        step = board.border_size // 2
+        dx = abs(piece.x - target_pos[0])
+        dy = abs(piece.y - target_pos[1])
+            
+        # 2. Vérifie que le déplacement est d'une case
+        if not ((dx == step and dy == 0) or  # Horizontal
+                (dy == step and dx == 0) or  # Vertical
+                (dx == step and dy == step)):  # Diagonal
+            # print("Mouvement interdite")
+            return False
+            
+        # 3. Vérifie les diagonales interdites (en coordonnées relatives)
+        piece_rel = utils.absolute_to_relative(piece.x, piece.y, self)
+        target_rel = utils.absolute_to_relative(target_pos[0], target_pos[1], self)
+            
+        forbidden_diagonals = {
+                (0.5, 0): [(1, 0.5), (0, 0.5)],    # (150,0) → (300,150), (0,150)
+                (0, 0.5): [(0.5, 0), (0.5, 1)],    # (0,150) → (150,0), (150,300)
+                (0.5, 1): [(0, 0.5), (1, 0.5)],    # (150,300) → (0,150), (300,150)
+                (1, 0.5): [(0.5, 0), (0.5, 1)]     # (300,150) → (150,0), (150,300)
+        }
+            
+        if piece_rel in forbidden_diagonals:
+            if target_rel in forbidden_diagonals[piece_rel]: 
+                return False
+            
+        # 4. Vérifie les pièces intermédiaires (pour horizontaux/verticaux)
+        if dx != step or dy != step:  # Si ce n'est pas une diagonale
+            mid_x = piece.x + (target_pos[0] - piece.x) // 2
+            mid_y = piece.y + (target_pos[1] - piece.y) // 2
+            if any(p.x == mid_x and p.y == mid_y for p in board.pieces):
+                return False
+            
+        return True

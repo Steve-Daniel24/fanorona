@@ -1,6 +1,0 @@
-fanorona_telo/
-├── main.py            # Point d'entrée principal
-├── game_manager.py    # Gestion du flux de jeu
-├── board.py           # Plateau de jeu
-├── piece.py           # Pions du jeu
-└── constants.py       # Constantes partagées (optionnel)

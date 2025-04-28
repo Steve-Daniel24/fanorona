@@ -21,7 +21,7 @@ class devil:
             print("Coups valide : ")
             for coup in self._coups_possibles(piece):
                 # Évalue seulement les coups valides
-                if self.GameManager._is_valid_move(piece, coup):
+                if self.board._est_coup_valide(piece, coup, self.board):
                     print("target : " + str(coup[0]) + " " + str(coup[1]))
                     
                     nouveau_plateau = self._simuler_coup(piece, coup)
@@ -143,7 +143,7 @@ class devil:
             best = -float('inf')
             for piece in [p for p in plateau.pieces if p.owner == self.player_name]:
                 for coup in self._coups_possibles(piece):
-                    if self._est_coup_valide(piece, coup, plateau):
+                    if self.board._est_coup_valide(piece, coup, plateau):
                         new_board = self._simuler_coup_with_board(piece, coup, plateau)
                         best = max(best, self._minimax(new_board, profondeur-1, False))
             return best
@@ -152,59 +152,10 @@ class devil:
             adversaire = 'player1' if self.player_name == 'player2' else 'player2'
             for piece in [p for p in plateau.pieces if p.owner == adversaire]:
                 for coup in self._coups_possibles(piece):
-                    if self._est_coup_valide(piece, coup, plateau):
+                    if self.board._est_coup_valide(piece, coup, plateau):
                         new_board = self._simuler_coup_with_board(piece, coup, plateau)
                         best = min(best, self._minimax(new_board, profondeur-1, True))
             return best
-    
-    def _est_coup_valide(self, piece, target_pos, board):
-            """Vérifie si le mouvement est valide""" 
-    
-            # Pas en dehors de la table
-            if not (board.border_x <= target_pos[0] <= board.border_x + board.border_size and
-            board.border_y <= target_pos[1] <= board.border_y + board.border_size):
-                return False
-            
-            # 1. Vérifie que la case cible est vide
-            for p in board.pieces:
-                if p.x == target_pos[0] and p.y == target_pos[1]:
-                    # print("Case non vide")
-                    return False
-            
-            step = board.border_size // 2
-            dx = abs(piece.x - target_pos[0])
-            dy = abs(piece.y - target_pos[1])
-            
-            # 2. Vérifie que le déplacement est d'une case
-            if not ((dx == step and dy == 0) or  # Horizontal
-                    (dy == step and dx == 0) or  # Vertical
-                    (dx == step and dy == step)):  # Diagonal
-                # print("Mouvement interdite")
-                return False
-            
-            # 3. Vérifie les diagonales interdites (en coordonnées relatives)
-            piece_rel = self._absolute_to_relative(piece.x, piece.y)
-            target_rel = self._absolute_to_relative(target_pos[0], target_pos[1])
-            
-            forbidden_diagonals = {
-                (0.5, 0): [(1, 0.5), (0, 0.5)],    # (150,0) → (300,150), (0,150)
-                (0, 0.5): [(0.5, 0), (0.5, 1)],    # (0,150) → (150,0), (150,300)
-                (0.5, 1): [(0, 0.5), (1, 0.5)],    # (150,300) → (0,150), (300,150)
-                (1, 0.5): [(0.5, 0), (0.5, 1)]     # (300,150) → (150,0), (150,300)
-            }
-            
-            if piece_rel in forbidden_diagonals:
-                if target_rel in forbidden_diagonals[piece_rel]: 
-                    return False
-            
-            # 4. Vérifie les pièces intermédiaires (pour horizontaux/verticaux)
-            if dx != step or dy != step:  # Si ce n'est pas une diagonale
-                mid_x = piece.x + (target_pos[0] - piece.x) // 2
-                mid_y = piece.y + (target_pos[1] - piece.y) // 2
-                if any(p.x == mid_x and p.y == mid_y for p in board.pieces):
-                    return False
-            
-            return True
     
     def _absolute_to_relative(self, x, y):
         """Convertit des coordonnées absolues en relatives (0-1)"""
@@ -212,13 +163,24 @@ class devil:
         y_rel = round((y - self.board.border_y) / self.board.border_size, 2)
         return (x_rel, y_rel)
     
-    def choisir_placement(self):
+    def choisir_placement(self, number_of_piece, number_of_piece_adverse):
         """Choisit la meilleure position pour placer une pièce"""
+        print("number_of_piece : " + str(number_of_piece))
+        print("number_of_piece_adverse : " + str(number_of_piece_adverse))
+        print()
+        
+        # positions_possibles = [
+        #     (0, 0), (0.5, 0), (1, 0),
+        #     (0, 0.5), (0.5, 0.5), (1, 0.5),
+        #     (0, 1), (0.5, 1), (1, 1)
+        # ]
+        
         positions_possibles = [
             (0, 0), (0.5, 0), (1, 0),
-            (0, 0.5), (0.5, 0.5), (1, 0.5),
+            (0, 0.5),   (1, 0.5),
             (0, 1), (0.5, 1), (1, 1)
         ]
+        
         
         # Filtrer les positions interdites et occupées
         positions_valides = []
@@ -235,12 +197,13 @@ class devil:
             return None
         
         # Prioriser le centre si disponible
-        centre_x, centre_y = utils.relative_to_absolute(0.5, 0.5,
-                                                    self.board.border_x,
-                                                    self.board.border_y,
-                                                    self.board.border_size)
-        if (centre_x, centre_y) in positions_valides:
-            return (centre_x, centre_y)
+        # if (number_of_piece >= 1) : 
+        #     centre_x, centre_y = utils.relative_to_absolute(0.5, 0.5,
+        #                                                 self.board.border_x,
+        #                                                 self.board.border_y,
+        #                                                 self.board.border_size)
+        #     if (centre_x, centre_y) in positions_valides:
+        #         return (centre_x, centre_y)
         
         # Choisir la meilleure position selon l'évaluation
         meilleur_score = -float('inf')
@@ -248,7 +211,7 @@ class devil:
         
         for pos in positions_valides:
             pos_rel = self._absolute_to_relative(pos[0], pos[1])
-            score = self._evaluer_position(pos_rel)
+            score = self._evaluer_position(pos_rel, number_of_piece, number_of_piece_adverse)
             
             if score > meilleur_score:
                 meilleur_score = score
@@ -256,28 +219,25 @@ class devil:
         
         return meilleure_position
     
-    def _evaluer_position(self, pos_rel):
+    def _evaluer_position(self, pos_rel, number_of_piece, number_of_piece_adverse):
         """Évalue l'avantage d'une position (en coordonnées relatives)"""
         score = 0
-        
-        # Convertir la position relative en absolue pour les vérifications
-        x, y = utils.relative_to_absolute(pos_rel[0], pos_rel[1],
-                                        self.board.border_x,
-                                        self.board.border_y,
-                                        self.board.border_size)
-        
-        pieces_joueur = [p for p in self.board.pieces if p.owner == self.player_name]
-        if len(pieces_joueur) >= 2:  
-            score = self.compter_score(score, pieces_joueur, pos_rel, 100)
-         
+                
         adversaire = 'player1' if self.player_name == 'player2' else 'player2'
         pieces_adverses = [p for p in self.board.pieces if p.owner == adversaire]
         
-        if len(pieces_adverses) >= 2: 
-            score = self.compter_score(score, pieces_adverses, pos_rel, 50)
+        if number_of_piece_adverse >= 2: 
+            print("tapenana")
+            score = self.compter_score(score, pieces_adverses, pos_rel, 150)
+            
+        pieces_joueur = [p for p in self.board.pieces if p.owner == self.player_name]
+        if number_of_piece >= 2:
+            print("plus grand que 2, mitady 3 eme alignement")
+            score = self.compter_score(score, pieces_joueur, pos_rel, 100)
         
-        if pos_rel == (0.5, 0.5):
-            score += 3
+        if (number_of_piece >= 1) :
+            if pos_rel == (0.5, 0.5):
+                score += 3
              
         elif pos_rel in [(0, 0), (0, 1), (1, 0), (1, 1)]:
             score += 1
@@ -290,16 +250,16 @@ class devil:
     def compter_score(self, score_actuelle, pieces, pos_rel, score_a_ajouter):
         for i in range(len(pieces)):
             for j in range(i+1, len(pieces)):
-                    p1 = pieces[i]
-                    p2 = pieces[j]
+                p1 = pieces[i]
+                p2 = pieces[j]
                     
-                    p1_rel = self._absolute_to_relative(p1.x, p1.y)
-                    p2_rel = self._absolute_to_relative(p2.x, p2.y)
+                p1_rel = self._absolute_to_relative(p1.x, p1.y)
+                p2_rel = self._absolute_to_relative(p2.x, p2.y)
                     
-                    if self._sont_alignes(p1_rel, p2_rel, pos_rel):
-                        score_actuelle += score_a_ajouter 
+                if self._sont_alignes(p1_rel, p2_rel, pos_rel):
+                    score_actuelle += score_a_ajouter 
             
-            return score_actuelle
+        return score_actuelle
             
     def _sont_alignes(self, p1, p2, p3):
         """Vérifie si 3 positions relatives sont alignées"""

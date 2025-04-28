@@ -1,0 +1,29 @@
+    def _display_win_message(self):
+        """Affiche un message de victoire stylisé"""
+        if not self.game_over or not self.winner:
+            return
+        
+        # Création d'une surface semi-transparente pour le fond
+        overlay = pygame.Surface((self.board.SCREEN_WIDTH, self.board.SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))  # Noir semi-transparent
+        
+        # Affichage de l'overlay
+        self.screen.blit(overlay, (0, 0))
+        
+        # Configuration du texte
+        font_large = pygame.font.Font(None, 72)
+        font_small = pygame.font.Font(None, 36)
+        
+        # Texte principal
+        winner_text = f"Le joueur {self.winner} a gagné !"
+        text_surf = font_large.render(winner_text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center=(self.board.SCREEN_WIDTH//3, self.board.SCREEN_HEIGHT//3 - 50))
+        self.screen.blit(text_surf, text_rect)
+        
+        # Texte secondaire
+        restart_text = "Cliquez pour rejouer"
+        restart_surf = font_small.render(restart_text, True, (200, 200, 200))
+        restart_rect = restart_surf.get_rect(center=(self.board.SCREEN_WIDTH//3, self.board.SCREEN_HEIGHT//3 + 50))
+        self.screen.blit(restart_surf, restart_rect)
+        
+        pygame.display.flip()

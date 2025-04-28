@@ -1,9 +1,8 @@
-import pygame
-import time
-
 from board import Board
 from pieces import Piece
 from utils import utils
+
+from game_win import displayer
 
 from hell import devil
 
@@ -25,10 +24,6 @@ class GameManager:
         
         self.adding_forbidden = False 
     
-    def toggle_forbidden_mode(self):
-        """Active/désactive le mode ajout de points noirs"""
-        self.adding_forbidden = not self.adding_forbidden
-    
     def handle_click(self, pos):
         """Gère les clics de souris"""
         # ajout de point noir
@@ -40,8 +35,8 @@ class GameManager:
         # initialisation des pieces
         elif self.initialization_phase:
             self._handle_initialization_click(pos)
+        # Le code existant pour le jeu normal
         else:
-            # Le code existant pour le jeu normal
             if not self.selected_piece:
                 for piece in self.board.pieces:
                     if piece.owner == self.current_player and piece.is_clicked(pos):
@@ -51,6 +46,10 @@ class GameManager:
             else:
                 self._try_move_piece(pos)
     
+    def toggle_forbidden_mode(self):
+        """Active/désactive le mode ajout de points noirs"""
+        self.adding_forbidden = not self.adding_forbidden
+        
     def tour_ia(self):
         coup = self.ai_player_one.choisir_coup()
         
@@ -62,27 +61,43 @@ class GameManager:
     
     def _handle_initialization_click(self, pos):
         """Gère le placement pendant l'initialisation"""
-        if self.adding_forbidden:  # Ne pas placer de pièces en mode point noir
+        if self.adding_forbidden: 
             return
-                    
+        
         target_pos = self._get_nearest_valid_position(pos)
+        x_rel = round((target_pos[0] - self.board.border_x) / self.board.border_size, 2)
+        y_rel = round((target_pos[1] - self.board.border_y) / self.board.border_size, 2)
+        
+        # Vérification explicite du centre (coordonnées relatives et absolues)
+        if (x_rel == 0.5 and y_rel == 0.5) or \
+        (pos[0] == self.board.border_x + self.board.border_size//2 and 
+            pos[1] == self.board.border_y + self.board.border_size//2) :
+            # if self.pieces_placed['player1'] == 0: 
+                return
+        
         if target_pos and self.board._is_valid_initial_position(target_pos):
-            # Vérifie aussi que la position n'est pas interdite
+            # Vérifie aussi que la position n'est pas un point noir
             if not self.board.is_position_forbidden(target_pos):
                 self.board._place_piece(target_pos, 'player1')
                 self.pieces_placed['player1'] += 1
+                
+                self._check_win_condition(self.current_player)
                 
                 if self._check_initialization_complete():
                     return
                 
                 self.current_player = 'player2'
-                placement = self.ai_player_one.choisir_placement()
-                if placement:  # S'assurer que l'IA a trouvé une position valide
+                placement = self.ai_player_one.choisir_placement(self.pieces_placed['player2'], self.pieces_placed['player1'])
+                
+                if placement:
                     self.board._place_piece(placement, 'player2')
                     self.pieces_placed['player2'] += 1
                     
-                    if self._check_initialization_complete():
+                    self._check_win_condition(self.current_player)
+                    
+                    if self._check_initialization_complete(): 
                         return
+                    
                     self._switch_player() 
     
     def _check_initialization_complete(self):
@@ -102,8 +117,8 @@ class GameManager:
             self.selected_piece.selected = False
             self.selected_piece = None
             return
-            
-        if self._is_valid_move(self.selected_piece, target_pos):
+        
+        if self.board._est_coup_valide(self.selected_piece, target_pos, self.board):
             self.selected_piece.move(target_pos[0], target_pos[1])
             
             if self._check_win_condition(self.current_player):
@@ -137,68 +152,6 @@ class GameManager:
             return nearest_pos
         return None
     
-    def _is_valid_move(self, piece, target_pos):
-        """Vérifie si le mouvement est valide"""
-        # Vérifie si la position est interdite
-        if self.board.is_position_forbidden(target_pos):
-            return False
-
-        # Pas en dehors de la table
-        if not (self.board.border_x <= target_pos[0] <= self.board.border_x + self.board.border_size and
-        self.board.border_y <= target_pos[1] <= self.board.border_y + self.board.border_size):
-            return False
-
-        # 1. Vérifie que la case cible est vide
-        for p in self.board.pieces:
-            if p.x == target_pos[0] and p.y == target_pos[1]:
-                # print("Case non vide")
-                return False
-        
-        step = self.board.border_size // 2
-        dx = abs(piece.x - target_pos[0])
-        dy = abs(piece.y - target_pos[1])
-        
-        # 2. Vérifie que le déplacement est d'une case
-        if not ((dx == step and dy == 0) or  # Horizontal
-                (dy == step and dx == 0) or  # Vertical
-                (dx == step and dy == step)):  # Diagonal
-            # print("Mouvement interdite")
-            return False
-        
-        # 3. Vérifie les diagonales interdites (en coordonnées relatives)
-        piece_rel = self._absolute_to_relative(piece.x, piece.y)
-        target_rel = self._absolute_to_relative(target_pos[0], target_pos[1])
-        
-        forbidden_diagonals = {
-            (0.5, 0): [(1, 0.5), (0, 0.5)],    # (150,0) → (300,150), (0,150)
-            (0, 0.5): [(0.5, 0), (0.5, 1)],    # (0,150) → (150,0), (150,300)
-            (0.5, 1): [(0, 0.5), (1, 0.5)],    # (150,300) → (0,150), (300,150)
-            (1, 0.5): [(0.5, 0), (0.5, 1)]     # (300,150) → (150,0), (150,300)
-        }
-        
-        if piece_rel in forbidden_diagonals:
-            if target_rel in forbidden_diagonals[piece_rel]:
-                # print("piece_rel" + str(piece_rel))
-                # print("target_rel : " + str(target_rel))
-                
-                # print("")
-                return False
-        
-        # 4. Vérifie les pièces intermédiaires (pour horizontaux/verticaux)
-        if dx != step or dy != step:  # Si ce n'est pas une diagonale
-            mid_x = piece.x + (target_pos[0] - piece.x) // 2
-            mid_y = piece.y + (target_pos[1] - piece.y) // 2
-            if any(p.x == mid_x and p.y == mid_y for p in self.board.pieces):
-                return False
-        
-        return True
-    
-    def _absolute_to_relative(self, x, y):
-        """Convertit des coordonnées absolues en relatives (0-1)"""
-        x_rel = round((x - self.board.border_x) / self.board.border_size, 2)
-        y_rel = round((y - self.board.border_y) / self.board.border_size, 2)
-        return (x_rel, y_rel)
-    
     def _switch_player(self):
         """Change le tour de joueur"""
         self.current_player = 'player2' if self.current_player == 'player1' else 'player1'
@@ -206,35 +159,25 @@ class GameManager:
     def draw(self):
         """Dessine le plateau et les pions"""
         self.board.draw_board()
+        
+        if self.game_over:
+            displayer.displayer._display_win_message(self, self.board)
     
     def _check_win_condition(self, player):
         """Vérifie si le joueur actuel a gagné""" 
         player_pieces = [p for p in self.board.pieces if p.owner == player]
-         
+        
         for i in range(len(player_pieces)):
             for j in range(i+1, len(player_pieces)):
                 for k in range(j+1, len(player_pieces)):
-                    if self._are_aligned(player_pieces[i], player_pieces[j], player_pieces[k]):
+                    if utils._are_aligned(player_pieces[i], player_pieces[j], player_pieces[k]):
                         self.game_over = True 
-                        self.winner = self.current_player
+                        self.winner = player
+                        
+                        print(f"Le joueur {player} a gagné avec l'alignement :")
+                        print(f"- {player_pieces[i].x}, {player_pieces[i].y}")
+                        print(f"- {player_pieces[j].x}, {player_pieces[j].y}")
+                        print(f"- {player_pieces[k].x}, {player_pieces[k].y}")
                         return True
+        
         return False
-    
-    def _are_aligned(self, p1, p2, p3):
-        """Vérifie si 3 pions sont alignés""" 
-        # Horizontal
-        if p1.y == p2.y == p3.y:
-            return True
-        
-        # Vertical
-        if p1.x == p2.x == p3.x:
-            return True
-        
-        # Alignement diagonal (même pente)
-        # On évite la division par zéro en utilisant la multiplication
-        dx1 = p2.x - p1.x
-        dy1 = p2.y - p1.y
-        dx2 = p3.x - p1.x
-        dy2 = p3.y - p1.y
-        
-        return dx1 * dy2 == dx2 * dy1
